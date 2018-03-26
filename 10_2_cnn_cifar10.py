@@ -130,7 +130,7 @@ def cifar_cnn_model(input_images, batch_size, train_logical=True):
     # First Convolutional Layer
     with tf.variable_scope('conv1') as scope:
         # Conv_kernel is 5x5 for all 3 colors and we will create 64 features
-        conv1_kernel = truncated_normal_var(name='conv_kernel1', shape=[5, 5, 3, 64], dtype=tf.float32)
+        conv1_kernel = truncated_normal_var(name='conv_kernel1', shape=[7, 7, 3, 64], dtype=tf.float32)
         # We convolve across the image with a stride size of 1
         conv1 = tf.nn.conv2d(input_images, conv1_kernel, [1, 1, 1, 1], padding='SAME')
         # Initialize and add the bias term
@@ -149,7 +149,7 @@ def cifar_cnn_model(input_images, batch_size, train_logical=True):
     # Second Convolutional Layer
     with tf.variable_scope('conv2') as scope:
         # Conv kernel is 5x5, across all prior 64 features and we create 64 more features
-        conv2_kernel = truncated_normal_var(name='conv_kernel2', shape=[5, 5, 64, 64], dtype=tf.float32)
+        conv2_kernel = truncated_normal_var(name='conv_kernel2', shape=[3, 3, 64, 64], dtype=tf.float32)
         # Convolve filter across prior output with stride size of 1
         conv2 = tf.nn.conv2d(norm1, conv2_kernel, [1, 1, 1, 1], padding='SAME')
         # Initialize and add the bias
@@ -164,8 +164,44 @@ def cifar_cnn_model(input_images, batch_size, train_logical=True):
      # Local Response Normalization (parameters from paper)
     norm2 = tf.nn.lrn(pool2, depth_radius=5, bias=2.0, alpha=1e-3, beta=0.75, name='norm2')
     
+    # Third Convolutional Layer
+    with tf.variable_scope('conv3') as scope:
+        # Conv kernel is 5x5, across all prior 64 features and we create 64 more features
+        conv3_kernel = truncated_normal_var(name='conv_kernel3', shape=[3, 3, 64, 64], dtype=tf.float32)
+        # Convolve filter across prior output with stride size of 1
+        conv3 = tf.nn.conv2d(norm2, conv3_kernel, [1, 1, 1, 1], padding='SAME')
+        # Initialize and add the bias
+        conv3_bias = zero_var(name='conv_bias3', shape=[64], dtype=tf.float32)
+        conv3_add_bias = tf.nn.bias_add(conv3, conv3_bias)
+        # ReLU element wise
+        relu_conv3 = tf.nn.relu(conv3_add_bias)
+    
+    # Max Pooling
+    pool3 = tf.nn.max_pool(relu_conv3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool_layer3')    
+    
+     # Local Response Normalization (parameters from paper)
+    norm3 = tf.nn.lrn(pool3, depth_radius=5, bias=2.0, alpha=1e-3, beta=0.75, name='norm3')
+
+    # Fourth Convolutional Layer
+    with tf.variable_scope('conv4') as scope:
+        # Conv kernel is 5x5, across all prior 64 features and we create 64 more features
+        conv4_kernel = truncated_normal_var(name='conv_kernel4', shape=[3, 3, 64, 64], dtype=tf.float32)
+        # Convolve filter across prior output with stride size of 1
+        conv4 = tf.nn.conv2d(norm3, conv4_kernel, [1, 1, 1, 1], padding='SAME')
+        # Initialize and add the bias
+        conv4_bias = zero_var(name='conv_bias4', shape=[64], dtype=tf.float32)
+        conv4_add_bias = tf.nn.bias_add(conv4, conv4_bias)
+        # ReLU element wise
+        relu_conv4 = tf.nn.relu(conv4_add_bias)
+    
+    # Max Pooling
+    pool4 = tf.nn.max_pool(relu_conv4, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool_layer4')    
+    
+     # Local Response Normalization (parameters from paper)
+    norm4 = tf.nn.lrn(pool4, depth_radius=5, bias=2.0, alpha=1e-3, beta=0.75, name='norm4')
+
     # Reshape output into a single matrix for multiplication for the fully connected layers
-    reshaped_output = tf.reshape(norm2, [batch_size, -1])
+    reshaped_output = tf.reshape(norm4, [batch_size, -1])
     reshaped_dim = reshaped_output.get_shape()[1].value
     
     # First Fully Connected Layer
@@ -181,6 +217,7 @@ def cifar_cnn_model(input_images, batch_size, train_logical=True):
         full_weight2 = truncated_normal_var(name='full_mult2', shape=[384, 192], dtype=tf.float32)
         full_bias2 = zero_var(name='full_bias2', shape=[192], dtype=tf.float32)
         full_layer2 = tf.nn.relu(tf.add(tf.matmul(full_layer1, full_weight2), full_bias2))
+        full_layer2 = tf.nn.dropout(full_layer2, 0.5)
 
     # Final Fully Connected Layer -> 10 categories for output (num_targets)
     with tf.variable_scope('full3') as scope:

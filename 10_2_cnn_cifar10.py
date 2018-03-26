@@ -27,7 +27,7 @@ sess = tf.Session()
 batch_size = 128
 data_dir = 'temp'
 output_every = 50 # change this to 50 for a complete run
-generations = 1000 # change this to 20000 for a complete run
+generations = 20000 # change this to 20000 for a complete run
 eval_every = 500 # change this to 500 for a complete run
 image_height = 32
 image_width = 32
@@ -36,7 +36,7 @@ crop_width = 24
 num_channels = 3
 num_targets = 10
 extract_folder = 'cifar-10-batches-bin'
-
+max_pool_size1 = 3
 # Exponential Learning Rate Decay Params
 learning_rate = 0.1
 lr_decay = 0.1
@@ -140,7 +140,7 @@ def cifar_cnn_model(input_images, batch_size, train_logical=True):
         relu_conv1 = tf.nn.relu(conv1_add_bias)
     
     # Max Pooling
-    pool1 = tf.nn.max_pool(relu_conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],padding='SAME', name='pool_layer1')
+    pool1 = tf.nn.max_pool(relu_conv1, ksize=[1, max_pool_size1, max_pool_size1, 1], strides=[1, 2, 2, 1],padding='SAME', name='pool_layer1')
     
     # Local Response Normalization (parameters from paper)
     # paper: http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks

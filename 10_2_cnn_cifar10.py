@@ -38,7 +38,7 @@ num_targets = 10
 extract_folder = 'cifar-10-batches-bin'
 max_pool_size1 = 3
 # Exponential Learning Rate Decay Params
-learning_rate = 0.1
+learning_rate = 0.025
 lr_decay = 0.1
 num_gens_to_wait = 250.
 
@@ -254,7 +254,7 @@ accuracy = accuracy_of_batch(test_output, test_targets)
 
 # Create training operations
 print('Creating the Training Operation.')
-generation_num = tf.Variable(10, trainable=False)
+generation_num = tf.Variable(20, trainable=False)
 train_op = train_step(loss, generation_num)
 
 # Initialize Variables
